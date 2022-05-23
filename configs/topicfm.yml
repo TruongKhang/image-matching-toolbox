@@ -1,6 +1,6 @@
 default: &default
-    class: 'LoFTR'
-    ckpt: 'pretrained/loftr/outdoor_ds.ckpt'
+    class: 'TopicFM'
+    ckpt: 'pretrained/topicfm/pretrained_epoch28.ckpt'
     match_threshold: 0.2
     imsize: -1
     no_matches_upscale: False
@@ -8,7 +8,8 @@ example:
     <<: *default
     match_threshold: 0.5
     imsize: -1
-hpatch:        
+hpatch:
     <<: *default
-    imsize: 480
-    no_match_upscale: True
+    imsize: 1024
+    no_match_upscale: False
+    n_sampling_topics: 4
