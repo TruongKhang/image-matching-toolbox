@@ -1,0 +1,26 @@
+default: &default
+    class: 'TopicFM'
+    ckpt: 'pretrained/topicformer/pretrained_latest.ckpt'
+    match_threshold: 0.2
+    imsize: -1
+    no_matches_upscale: False
+example:
+    <<: *default
+    match_threshold: 0.5
+    imsize: -1
+hpatch:
+    <<: *default
+    imsize: 1024
+    no_match_upscale: False
+    n_sampling_topics: 4
+aachen_v1.1:
+    <<: *default
+    imsize: 1024
+    match_threshold: 0.0 # Save all matches
+    pairs: ['pairs-db-covis20.txt', 'pairs-query-netvlad50.txt']
+    qt_dthres: 4
+    qt_psize: 48
+    qt_unique: True
+    ransac_thres: [20]
+    sc_thres: 0.25 # Filtering during quantization
+    covis_cluster: True

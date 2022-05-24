@@ -3,8 +3,8 @@ import torch
 import numpy as np
 import cv2
 
-from third_party.topicfm.src.models import TopicFM as TopicFM_
-from third_party.topicfm.src import get_model_cfg
+from third_party.topicformer.src.models import TopicFM as TopicFM_
+from third_party.topicformer.src import get_model_cfg
 from .base import Matching
 from immatch.utils.data_io import load_gray_scale_tensor_cv
 

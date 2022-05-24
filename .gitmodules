@@ -28,3 +28,7 @@
 	path = third_party/cotr
 	url = git@github.com:ubc-vision/COTR.git
 	branch = master
+[submodule "third_party/topicformer"]
+	path = third_party/topicformer
+	url = https://github.com/TruongKhang/topicformer
+	branch = dev
