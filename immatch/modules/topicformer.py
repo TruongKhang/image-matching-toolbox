@@ -19,6 +19,7 @@ class TopicFM(Matching):
         self.match_threshold = args.match_threshold
         self.no_match_upscale = args.no_match_upscale
         self.n_sampling_topics = args.n_sampling_topics
+        self.max_n_matches = args.max_n_matches
 
         # Load model
         conf = dict(get_model_cfg())
@@ -45,9 +46,10 @@ class TopicFM(Matching):
     def match_inputs_(self, gray1, gray2):
         batch = {'image0': gray1, 'image1': gray2}
         self.model(batch)
-        kpts1 = batch['mkpts0_f'].cpu().numpy()
-        kpts2 = batch['mkpts1_f'].cpu().numpy()
-        scores = batch['mconf'].cpu().numpy()
+        sorted_ids = torch.argsort(batch["mconf"], descending=True)[:self.max_n_matches]
+        kpts1 = batch['mkpts0_f'][sorted_ids, :].cpu().numpy()
+        kpts2 = batch['mkpts1_f'][sorted_ids, :].cpu().numpy()
+        scores = batch['mconf'][sorted_ids].cpu().numpy()
         matches = np.concatenate([kpts1, kpts2], axis=1)
         return matches, kpts1, kpts2, scores
 

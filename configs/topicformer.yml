@@ -1,6 +1,6 @@
 default: &default
     class: 'TopicFM'
-    ckpt: 'pretrained/topicformer/pretrained_epoch36.ckpt'
+    ckpt: 'pretrained/topicformer/model_best.ckpt'
     match_threshold: 0.2
     imsize: -1
     no_matches_upscale: False
@@ -15,14 +15,39 @@ hpatch:
     n_sampling_topics: 6
 aachen_v1.1:
     <<: *default
-    imsize: 1024
+    imsize: 1200
     no_match_upscale: False
     n_sampling_topics: 6
-    match_threshold: 0.1 # Save all matches
+    match_threshold: 0.0 # Save all matches#
+    max_n_matches: 3600
     pairs: ['pairs-db-covis20.txt', 'pairs-query-netvlad50.txt']
-    qt_dthres: 4
+    qt_dthres: 2
     qt_psize: 48
     qt_unique: True
     ransac_thres: [20]
-    sc_thres: 0.25 # Filtering during quantization
+    sc_thres: 0.2 # Filtering during quantization
     covis_cluster: True
+#aachen_v1.1:
+#    <<: *default
+#    imsize: 1600
+#    no_match_upscale: False
+#    n_sampling_topics: 6
+#    match_threshold: 0.0 # Save all matches
+#    max_n_matches: 3600
+#    pairs: ['pairs-db-night_benchmark.txt', 'pairs-query-night_benchmark.txt']
+#    qt_dthres: 3
+#    qt_psize: 48
+#    qt_unique: True
+#    ransac_thres: [10]
+#    sc_thres: 0.2 # Filtering during quantization
+#    covis_cluster: False
+inloc:
+    <<: *default
+    imsize: 1024
+    no_match_upscale: False
+    match_threshold: 0.1
+    n_sampling_topics: 8
+    max_n_matches: 2048
+    pairs: 'pairs-query-netvlad40-temporal.txt'
+    rthres: 48
+    skip_matches: 20
