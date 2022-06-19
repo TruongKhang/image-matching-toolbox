@@ -8,7 +8,7 @@ from .modules.loftr import LoFTR  # Cause warnings
 from .modules.sift import SIFT
 from .modules.dogaffnethardnet import DogAffNetHardNet
 from .modules.cotr import COTR
-from .modules.topicformer import TopicFM
+from .modules.topicfm import TopicFM
 
 try:
     import MinkowskiEngine

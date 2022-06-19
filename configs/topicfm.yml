@@ -1,18 +1,22 @@
 default: &default
     class: 'TopicFM'
-    ckpt: 'pretrained/topicformer/model_best.ckpt'
+    ckpt: 'pretrained/topicfm/model_best.ckpt'
     match_threshold: 0.2
     imsize: -1
-    no_matches_upscale: False
+    dim_resized: "max"
+    max_n_matches: -1
+    no_match_upscale: False
 example:
     <<: *default
     match_threshold: 0.5
     imsize: -1
 hpatch:
     <<: *default
-    imsize: 1024
-    no_match_upscale: False
+    imsize: 480
+    dim_resized: "min"
+    no_match_upscale: True
     n_sampling_topics: 6
+    max_n_matches: 1088
 aachen_v1.1:
     <<: *default
     imsize: 1200
