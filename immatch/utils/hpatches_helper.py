@@ -46,8 +46,8 @@ def eval_summary_homography(dists_sa, dists_si, dists_sv, thres):
     auc_sv = cal_error_auc(dists_sv, thresholds=thres)    
 
     # Generate summary
-    summary = f'Hest Correct: a={correct_sa}\ni={correct_si}\nv={correct_sv}\n'
-    summary += f'Hest AUC: a={auc_sa}\ni={auc_si}\nv={auc_sv}\n'
+    summary = f'Hest Correct: a={correct_sa*100}\ni={correct_si*100}\nv={correct_sv*100}\n'
+    summary += f'Hest AUC: a={auc_sa*100}\ni={auc_si*100}\nv={auc_sv*100}\n'
     return summary
 
 def eval_summary_matching(results, thres=[1, 3, 5, 10], save_npy=None):
@@ -197,7 +197,8 @@ def eval_hpatches(
             if 'homography' in task:
                 try:
                     if 'cv' in h_solver:
-                        H_pred, inliers = cv2.findHomography(matches[:, :2], matches[:, 2:4], cv2.RANSAC, ransac_thres)
+                        H_pred, inliers = cv2.findHomography(matches[:, :2], matches[:, 2:4], cv2.RANSAC,
+                                                             ransac_thres, confidence=0.99999)
                     else:
                         H_pred, inliers = pydegensac.findHomography(matches[:, :2], matches[:, 2:4], ransac_thres)
                 except:
