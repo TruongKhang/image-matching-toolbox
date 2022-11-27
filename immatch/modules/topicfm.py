@@ -3,47 +3,60 @@ import torch
 import numpy as np
 import cv2
 
-from third_party.loftr.src.loftr import LoFTR as LoFTR_, default_cfg
+from third_party.topicfm.src.models import TopicFM as TopicFM_
+from third_party.topicfm.src import get_model_cfg
 from .base import Matching
 from immatch.utils.data_io import load_gray_scale_tensor_cv
 
-class LoFTR(Matching):
+
+class TopicFM(Matching):
     def __init__(self, args):
         super().__init__()
         if type(args) == dict:
             args = Namespace(**args)
 
         self.imsize = args.imsize
-        self.resize_type = max if args.dim_resized == 'max' else min
+        self.scale_type = max if args.dim_resized == 'max' else min
         self.match_threshold = args.match_threshold
         self.no_match_upscale = args.no_match_upscale
+        self.n_sampling_topics = args.n_sampling_topics
+        self.max_n_matches = args.max_n_matches if args.max_n_matches > 0 else None
 
         # Load model
-        conf = dict(default_cfg)
+        conf = dict(get_model_cfg())
         conf['match_coarse']['thr'] = self.match_threshold
-        self.model = LoFTR_(config=conf)
+        conf['coarse']['n_samples'] = self.n_sampling_topics
+        print(conf)
+        self.model = TopicFM_(config=conf)
         ckpt_dict = torch.load(args.ckpt)
         self.model.load_state_dict(ckpt_dict['state_dict'])
         self.model = self.model.eval().to(self.device)
 
         # Name the method
         self.ckpt_name = args.ckpt.split('/')[-1].split('.')[0]
-        self.name = f'LoFTR_{self.ckpt_name}'        
+        self.name = f'TopicFM_{self.ckpt_name}'
         if self.no_match_upscale:
             self.name += '_noms'
         print(f'Initialize {self.name}')
-        
+
     def load_im(self, im_path):
         return load_gray_scale_tensor_cv(
-            im_path, self.device, imsize=self.imsize, dfactor=8, scale_type=self.resize_type
+            im_path, self.device, imsize=self.imsize, dfactor=16, scale_type=self.scale_type
         )
 
     def match_inputs_(self, gray1, gray2):
         batch = {'image0': gray1, 'image1': gray2}
-        self.model(batch)
-        kpts1 = batch['mkpts0_f'].cpu().numpy()
-        kpts2 = batch['mkpts1_f'].cpu().numpy()
-        scores = batch['mconf'].cpu().numpy()
+        with torch.no_grad():
+            self.model(batch)
+        if self.max_n_matches is not None:
+            sorted_ids = torch.argsort(batch["mconf"], descending=True)[:self.max_n_matches]
+            kpts1 = batch['mkpts0_f'][sorted_ids, :].cpu().numpy()
+            kpts2 = batch['mkpts1_f'][sorted_ids, :].cpu().numpy()
+            scores = batch['mconf'][sorted_ids].cpu().numpy()
+        else:
+            kpts1 = batch['mkpts0_f'].cpu().numpy()
+            kpts2 = batch['mkpts1_f'].cpu().numpy()
+            scores = batch['mconf'].cpu().numpy()
         matches = np.concatenate([kpts1, kpts2], axis=1)
         return matches, kpts1, kpts2, scores
 

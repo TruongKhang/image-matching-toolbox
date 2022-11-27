@@ -1,0 +1,56 @@
+default: &default
+    class: 'TopicFM'
+    ckpt: 'pretrained/topicfm/model_best.ckpt'
+    match_threshold: 0.2
+    imsize: -1
+    dim_resized: "max"
+    max_n_matches: -1
+    no_match_upscale: False
+example:
+    <<: *default
+    match_threshold: 0.5
+    imsize: -1
+hpatch: # this default settings is used for homography evaluation
+    <<: *default
+    imsize: 480 # set to 1024 for MMA evaluation
+    match_threshold: 0.2 # set to 0.9 for MMA evaluation
+    dim_resized: "min" # set to "max" for MMA evaluation
+    no_match_upscale: True # set False for MMA evaluation
+    n_sampling_topics: 7
+    max_n_matches: 1088
+aachen_v1.1:
+    <<: *default
+    imsize: 1200
+    n_sampling_topics: 6
+    match_threshold: 0.0 # Save all matches#
+    pairs: ['pairs-db-covis20.txt', 'pairs-query-netvlad50.txt']
+    qt_dthres: 2
+    qt_psize: 48
+    qt_unique: True
+    ransac_thres: [25]
+    sc_thres: 0.2 # Filtering during quantization
+    covis_cluster: True
+#aachen_v1.1:
+#    <<: *default
+
+#    imsize: 1600
+#    no_match_upscale: False
+#    n_sampling_topics: 6
+#    match_threshold: 0.0 # Save all matches
+#    max_n_matches: 3600
+#    pairs: ['pairs-db-night_benchmark.txt', 'pairs-query-night_benchmark.txt']
+#    qt_dthres: 3
+#    qt_psize: 48
+#    qt_unique: True
+#    ransac_thres: [10]
+#    sc_thres: 0.2 # Filtering during quantization
+#    covis_cluster: False
+inloc:
+    <<: *default
+    imsize: 1024
+    match_threshold: 0.1
+    n_sampling_topics: 8
+    max_n_matches: 2048
+    pairs: 'pairs-query-netvlad40-temporal.txt'
+    rthres: 48
+    skip_matches: 20

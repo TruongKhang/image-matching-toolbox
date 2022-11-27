@@ -18,22 +18,24 @@ class Patch2Pix(Matching):
         if type(args) == dict:
             args = Namespace(**args)
         self.imsize = args.imsize
+        self.dim_resized = max if args.dim_resized == 'max' else min
         self.match_threshold = args.match_threshold
+        self.no_match_upscale = args.no_match_upscale
         self.ksize = args.ksize
         self.model = load_model(args.ckpt, method='patch2pix')
         self.name = 'Patch2Pix'        
         print(f'Initialize {self.name}')      
     
     def match_pairs(self, im1_path, im2_path):
-        matches, scores, _ = estimate_matches(self.model, 
-                                              im1_path, im2_path,
+        matches, scores, _, upscale = estimate_matches(self.model, im1_path, im2_path,
                                               ksize=self.ksize,
                                               io_thres=self.match_threshold, 
                                               eval_type='fine', 
-                                              imsize=self.imsize)    
+                                              imsize=self.imsize, resize_type=self.dim_resized,
+                                                       return_upscale=(not self.no_match_upscale))
         kpts1 = matches[:, :2]
         kpts2 = matches[:, 2:4]
-        return matches, kpts1, kpts2, scores
+        return matches, kpts1, kpts2, scores, upscale
 
 class NCNet(Matching):
     def __init__(self, args):
