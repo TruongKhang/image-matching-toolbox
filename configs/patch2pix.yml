@@ -3,13 +3,19 @@ default: &default
     ckpt: 'pretrained/patch2pix/patch2pix_pretrained.pth'
     ksize: 2
     imsize: 1024
+    dim_resized: 'max'
     match_threshold: 0.25
+    no_match_upscale: False
 example:
     <<: *default
     match_threshold: 0.5
     imsize: -1
 hpatch:
     <<: *default
+    imsize: 480
+    dim_resized: "min"
+    match_threshold: 0.2
+    no_match_upscale: True
 inloc:
     <<: *default
     pairs: 'pairs-query-netvlad40-temporal.txt' 

@@ -13,7 +13,8 @@ class LoFTR(Matching):
         if type(args) == dict:
             args = Namespace(**args)
 
-        self.imsize = args.imsize        
+        self.imsize = args.imsize
+        self.resize_type = max if args.dim_resized == 'max' else min
         self.match_threshold = args.match_threshold
         self.no_match_upscale = args.no_match_upscale
 
@@ -34,7 +35,7 @@ class LoFTR(Matching):
         
     def load_im(self, im_path):
         return load_gray_scale_tensor_cv(
-            im_path, self.device, imsize=self.imsize, dfactor=8
+            im_path, self.device, imsize=self.imsize, dfactor=8, scale_type=self.resize_type
         )
 
     def match_inputs_(self, gray1, gray2):

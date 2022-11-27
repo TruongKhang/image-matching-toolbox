@@ -32,3 +32,6 @@
 	path = third_party/topicformer
 	url = https://github.com/TruongKhang/topicformer
 	branch = dev
+[submodule "third_party/topicfm"]
+	path = third_party/topicfm
+	url = https://github.com/TruongKhang/TopicFM
