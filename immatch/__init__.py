@@ -9,6 +9,7 @@ from .modules.sift import SIFT
 from .modules.dogaffnethardnet import DogAffNetHardNet
 from .modules.cotr import COTR
 from .modules.topicfm import TopicFM
+from .modules.topicfmv2 import TopicFMv2
 
 try:
     import MinkowskiEngine
