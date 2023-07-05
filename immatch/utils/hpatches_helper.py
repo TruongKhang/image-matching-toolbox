@@ -197,8 +197,8 @@ def eval_hpatches(
             if 'homography' in task:
                 try:
                     if 'cv' in h_solver:
-                        H_pred, inliers = cv2.findHomography(matches[:, :2], matches[:, 2:4], cv2.RANSAC,
-                                                             ransac_thres, confidence=0.99999)
+                        H_pred, inliers = cv2.findHomography(matches[:, :2], matches[:, 2:4], cv2.USAC_MAGSAC,
+                                                             ransac_thres, confidence=0.99999, maxIters=10000)
                     else:
                         H_pred, inliers = pydegensac.findHomography(matches[:, :2], matches[:, 2:4], ransac_thres)
                 except:

@@ -170,7 +170,7 @@ def get_unique_matches_ids(match_ids, scores):
     uids = list(set(uid1s).intersection(uid2s))    
     return uids  
 
-def quantize_keypoints(fpts, kp_data, psize=48, dthres=4):
+def quantize_keypoints_mean(fpts, kp_data, psize=48, dthres=4):
     """Keypoints quantization algorithm.
     The image is divided into cells, where each cell represents a psize*psize local patch.
     Each input point has its linked coarse point (patch region).
@@ -214,12 +214,60 @@ def quantize_keypoints(fpts, kp_data, psize=48, dthres=4):
         fpt_ids.append(kid)    
     return fpt_ids
 
+def quantize_keypoints_max(fpts, mconfs, kp_data, psize=48, dthres=4):
+    """Keypoints quantization algorithm.
+    The image is divided into cells, where each cell represents a psize*psize local patch.
+    Each input point has its linked coarse point (patch region).
+    For all points inside a patch region, those points with distances smaller than the given
+    threshold will be merged and represented by their mean pixel.
+
+    Args:
+        - fpts: the set of input keypoint coordinates, shape (N, 2)
+        - kp_data: the keypoint data dict linked to an image
+        - psize: the size to divide an image into multiple patch regions
+        - dthres: the distance threshold (in pixels) for merging points within the same patch region
+    Return:
+        - fpt_ids: the keypoint ids of the input points
+    """
+
+    # kp_data: {'kps':[], 'kp_means': kp_dict}
+    fpt_ids = []
+    cpts = fpts // psize * psize  # Point coordinates (x, y)
+    for cpt, fpt, conf in zip(cpts, fpts, mconfs):
+        cpt = tuple(cpt)
+        kps = kp_data['kps']
+        kp_dict = kp_data['kp_means']  # {cpt : {'means':[], 'kids':[]}}
+        if cpt not in kp_dict:
+            kid = len(kps)
+            kps.append(fpt)  # Insert another keypoint
+            kp_dict[cpt] = {'means': [fpt], 'confs': [conf], 'kids': [kid]}  # Init 1st center
+        else:
+            kids = kp_dict[cpt]['kids']
+            centers = kp_dict[cpt]['means']  # N, 2
+            center_confs = kp_dict[cpt]["confs"]
+            dist = np.linalg.norm(fpt - np.array(centers), axis=1)
+            cid = np.argmin(dist)
+            if dist[cid] < dthres:
+                if center_confs[cid] < conf:
+                    centers[cid] = fpt # (centers[cid] + fpt) / 2  # Update center
+                    center_confs[cid] = conf
+                kid = kids[cid]
+                kps[kid] = centers[cid]  # Update key point value
+            else:
+                kid = len(kps)
+                kps.append(fpt)  # Insert another keypoint
+                centers.append(fpt)  # Insert as a new center
+                center_confs.append(conf)
+                kids.append(kid)
+        fpt_ids.append(kid)
+    return fpt_ids
+
 def compute_keypoints(pts, kp_data):
     kps = kp_data['kps']
     kp_dict = kp_data['kpids']
     pt_ids = []
     for pt in pts:
-        key = tuple(pt)        
+        key = tuple(pt.round())        
         if key not in kp_dict:
             kid = len(kps)   # 0-based, the next inserting index            
             kps.append(pt)
@@ -292,7 +340,7 @@ def match_pairs_exporth5(pair_list, matcher, im_dir, output_dir, debug=False):
     match_pairs_with_keys_exporth5(matcher, pairs, pair_keys, match_file, debug=debug)
 
 def process_matches_and_keypoints_exporth5(pair_list, output_dir, result_dir,    
-                                           sc_thres=0.25, qt_dthres=4, qt_psize=48, 
+                                           sc_thres=0.25, qt_type="mean", qt_dthres=4, qt_psize=48, 
                                            qt_unique=True):
     """
     This function should be executed after running match_pairs_exporth5(), which save the 
@@ -346,7 +394,7 @@ def process_matches_and_keypoints_exporth5(pair_list, output_dir, result_dir,
             # Compute match ids and quantize keypoints
             match_ids = matches_to_keypoint_ids(
                 matches, scores, name0, name1, all_kp_data,
-                qt_dthres, qt_psize, qt_unique
+                qt_type, qt_dthres, qt_psize, qt_unique
             )
 
             # Save matches
@@ -365,7 +413,7 @@ def process_matches_and_keypoints_exporth5(pair_list, output_dir, result_dir,
     match_file.close()
     
 def matches_to_keypoint_ids(matches, scores, name0, name1, all_kp_data,
-                            qt_dthres=-1, qt_psize=-1, qt_unique=True):
+                            qt_type="mean", qt_dthres=-1, qt_psize=-1, qt_unique=True):
     if len(matches) == 0:
         return np.empty([0, 2], dtype=np.int32)
 
@@ -376,18 +424,24 @@ def matches_to_keypoint_ids(matches, scores, name0, name1, all_kp_data,
         if name1 not in all_kp_data:
             all_kp_data[name1] = {'kps':[], 'kp_means':{}}
 
-        id1s = quantize_keypoints(matches[:, 0:2], all_kp_data[name0],
-                                  psize=qt_psize, dthres=qt_dthres)
-        id2s = quantize_keypoints(matches[:, 2:4], all_kp_data[name1],
-                                  psize=qt_psize, dthres=qt_dthres)
+        if qt_type == "max":
+            id1s = quantize_keypoints_max(matches[:, 0:2], scores, all_kp_data[name0],
+                                          psize=qt_psize, dthres=qt_dthres)
+            id2s = quantize_keypoints_max(matches[:, 2:4], scores, all_kp_data[name1],
+                                          psize=qt_psize, dthres=qt_dthres)
+        else:
+            id1s = quantize_keypoints_mean(matches[:, 0:2], all_kp_data[name0],
+                                           psize=qt_psize, dthres=qt_dthres)
+            id2s = quantize_keypoints_mean(matches[:, 2:4], all_kp_data[name1],
+                                           psize=qt_psize, dthres=qt_dthres)
         match_ids = np.dstack([id1s, id2s]).reshape(-1, 2) # N, 2
 
         # Remove n-to-1 matches after quantization
         if qt_unique and len(match_ids) > 1:
             uids = get_unique_matches_ids(match_ids, scores)
             match_ids = match_ids[uids]
-            uids = get_unique_matches_ids(match_ids, scores)
-            match_ids = match_ids[uids]
+            # uids = get_unique_matches_ids(match_ids, scores)
+            # match_ids = match_ids[uids]
     else:
         # Compute keypoints without quantization
         if name0 not in all_kp_data:

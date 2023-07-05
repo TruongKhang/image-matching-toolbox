@@ -1,89 +1,58 @@
-# A Toolbox for Image Feature Matching and Evaluations 
-In this repository, we provide **easy interfaces** for several exisiting SotA methods to match image feature correspondences between image pairs.
-We provide **scripts to evaluate** their predicted correspondences on common benchmarks for the tasks of image matching, homography estimation and visual localization.
+# An Upgraded Version of Image-Matching-Toolbox 
+This repo is developed from the [original toolbox](https://github.com/GrumpyZhou/image-matching-toolbox) of Zhou et. al.
+I've made several updates as follows
+- [x] Add evaluation of my image-matching method, [TopicFM+](https://github.com/TruongKhang/TopicFM)
+- [x] Update homography estimation on HPatches. I added several options for the `cv2.findHomography` function
+- [x] Add quantization step for the evaluation of Aachen Day-Night, based on the maximum confidence of keypoints.
 
-## TODOs & Updates
-- [x] Add LoFTR method (2021-7-8)
-- [x] Add simple match visualization (2021-7-8)
-- [x] Use ***immatch*** as a python lib under develop mode. Check [install.md](docs/install.md) for details. (2021-7-22)
-- [x] Add SIFT method (opencv version) (2021-7-25)
-- [x] Add script to eval on RobotCar using HLoc (2021-7-31)
-- [x] Add Dog-AffNet-Hardnet (Contributed by Dmytro Mishkin 👏, 2021-8-29)
-- [x] Add AUC metric and opencv solver for Homography estimation on HPatches (#20, 2022-1-12)  
-- [x] Add COTR (A naive wrapper without tuning parameters, 2022-3-29) 
-- [ ] Add support to eval on [Image Matching Challenge](https://www.cs.ubc.ca/research/image-matching-challenge/current/data)
-- [ ] Add scripts to eval on [SimLoc](https://github.com/simlocmatch/simlocmatch-benchmark) challenge.
+We only provide the evaluation of TopicFM in this code. 
 
-***Comments from QJ***: Currently I am quite busy with my study & work. So it will take some time before I release the next two TODOs.
+For more detailed description and other functions of the toolbox, please visit the original version.
+## Installation
+Firstly, setup the experimental environment:
 
-## Supported Methods & Evaluations 
-**Sparse Keypoint-based Matching:**
- - Local Feature:
-[CAPS](https://arxiv.org/abs/2004.13324), [D2Net](https://arxiv.org/abs/1905.03561),  [R2D2](https://arxiv.org/abs/1906.06195), [SuperPoint](https://arxiv.org/abs/1712.07629), [Dog-AffNet-HardNet](https://arxiv.org/abs/1711.06704)
- - Matcher: [SuperGlue](https://arxiv.org/abs/1911.11763)
+	conda create -n immatch python=3.8
+	conda activate immatch
+	conda install pytorch==1.12.1 torchvision==0.13.1 cudatoolkit=10.2 -c pytorch
+	pip install jupyter, matplotlib, opencv-python==4.7.0.72
+	pip install pycolmap
 
-**Semi-dense Matching:**
- - Correspondence Network:  [NCNet](https://arxiv.org/abs/1810.10510),  [SparseNCNet](https://arxiv.org/pdf/2004.10566.pdf),
- - Transformer-based: [LoFTR](https://zju3dv.github.io/loftr/), [COTR](https://github.com/ubc-vision/COTR)
- - Local Refinement: [Patch2Pix](https://arxiv.org/abs/2012.01909)
+To evaluate on Aachen Day-Night and Inloc, install `COLMAP` from the [original website](https://colmap.github.io/). Make sure that you install successfully by testing `colmap` in your terminal.
 
-**Supported Evaluations** :
-- Image feature matching on HPatches
-- Homography estimation on HPatches
-- Visual localization benchmarks: 
-	- InLoc
-	- Aachen (original + v1.1)
-	- RobotCar Seasons (v1 + v2) 
+Secondly, install the dependencies of toolbox:
 
-## Repository Overview
-The repository is structured as follows:
- - **configs/**: Each method has its own yaml (.yml) file to configure its testing parameters. 
- - **data/**: All datasets should be placed under this folder following our instructions described in **[Data Preparation](docs/evaluation.md#data-preparation)**.
- - **immatch/**: It contains implementations of method wrappers  and evaluation interfaces.
- - **outputs/**: All evaluation results are supposed to be saved here. One folder per benchmark.
- - **pretrained/**: It contains the pretrained models of the supported methods. 
- - **third_party/**: The real implementation of the supported methods from their original repositories, as git submodules.
- - **notebooks/**: It contains jupyter notebooks that show example codes to quickly access the methods implemented in this repo. 
- - **docs/**: It contains separate documentation  about installation and evaluation. To keep a clean face of this repo :).
+	cd image-matching-toolbox/
+	git submodule update --init
+	# ignore this step if you don't want evaluate other methods
+	cd pretrained && bash download.sh && cd ..
 
-#### 👉Refer to [install.md](docs/install.md) for details about installation.
-#### 👉Refer to [evaluation.md](docs/evaluation.md) for details about evaluation on benchmarks.
+Clone the code of TopicFM and put it into the `third_party` folder
 
-## Example Code for Quick Testing
-To use a specific method to perform the matching task, you simply need to do:
--  **Initialize a matcher using its config file.**  See examples of config yaml files under [configs](configs/) folder, eg., [patch2pix.yml](configs/patch2pix.yml).  Each config file contains multiple sections, each section corresponds to one setting. Here, we use the setting (*tagged by 'example'*) for testing on example image pairs.
-- **Perform matching**
-```python
-import immatch
-import yaml
-from immatch.utils import plot_matches
+	cd third_party && git clone https://github.com/TruongKhang/TopicFM 
+	# change the folder name TopicFM --> topicfmv2
+	mv TopicFM topicfmv2 && cd ..
 
-# Initialize model
-with open('configs/patch2pix.yml', 'r') as f:
-    args = yaml.load(f, Loader=yaml.FullLoader)['example']
-model = immatch.__dict__[args['class']](args)
-matcher = lambda im1, im2: model.match_pairs(im1, im2)
+Next, download the pretrained models of [TopicFM+](https://github.com/TruongKhang/TopicFM) and put them into `third_party/topicfmv2/pretrained/`. This toolbox can support evaluations of two models `third_party/topicfmv2/pretrained/topicfm_fast.ckpt` and `third_party/topicfmv2/pretrained/topicfm_plus.ckpt`.
 
-# Specify the image pair
-im1 = 'third_party/patch2pix/examples/images/pair_2/1.jpg'
-im2 = 'third_party/patch2pix/examples/images/pair_2/2.jpg'
 
-# Match and visualize
-matches, _, _, _ = matcher(im1, im2)    
-plot_matches(im1, im2, matches, radius=2, lines=True)
-```
-![example matches](docs/patch2pix_example_matches.png)
+Finally, install the toolbox as follows:
 
-#### 👉 Try out the code using [example notebook ](notebooks/visualize_matches_on_example_pairs.ipynb).
+	python setup.py develop
 
-## Notice
-- This repository is expected to be actively maintained  (at least before I graduate🤣🤣)  and **gradually** (slowly) grow for new features of interest.
-- Suggestions regarding how to improve this repo, such as adding new **SotA** image matching methods or new benchmark evaluations, are welcome 👏.
+**Notes**: when running the program, use `pip install <package-name>` if there are any uninstalled packages.
 
-### Regarding Patch2Pix
-With this reprository, one can **reproduce** the tables reported in our  paper accepted at CVPR2021: Patch2Pix: Epipolar-Guided Pixel-Level Correspondences[[pdf]](https://arxiv.org/abs/2012.01909).  Check [our patch2pix repository](https://github.com/GrumpyZhou/patch2pix) for its training code.
+## Evaluation of TopicFM+
 
-###  Disclaimer 
--  All of the supported methods and evaluations are **not implemented from scratch**  by us.  Instead, we modularize their original code to define unified interfaces.
-- If you are using the results of a method, **remember to cite the corresponding paper**.
-- All credits of the implemetation of those methods belong to their authors .
+All settings of the model and datasets are specified in `configs/topicfmv2.yml`
+
+### HPatches
+
+	python -m immatch.eval_hpatches --gpu 0 --config 'topicfmv2' --task 'both' --h_solver 'cv' --ransac_thres 6 --root_dir . --odir 'outputs/hpatches'
+
+### AAchen Day-Night v1.1
+
+	python -m immatch.eval_aachen --gpu 0 --config 'topicfmv2' --colmap colmap --benchmark_name 'aachen_v1.1'
+
+### InLoc
+
+	python -m immatch.eval_inloc --gpu 0 --config 'topicfmv2'

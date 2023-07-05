@@ -46,7 +46,7 @@ def eval_aachen(args):
     
     # Extract keypoints
     process_matches_and_keypoints_exporth5(
-        pair_list, args.output_dir, args.result_dir,
+        pair_list, args.output_dir, args.result_dir, qt_type=args.qt_type,
         qt_psize=args.qt_psize, qt_dthres=args.qt_dthres,
         sc_thres=args.sc_thres         
     )
